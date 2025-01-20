@@ -1,15 +1,9 @@
 // Detect Vue version and inject appropriate DevTools
-async function detectAndInjectDevTools() {
-  // Get Vue version info
-  const vueInfo = await new Promise(resolve => {
-    chrome.runtime.sendMessage({ type: 'GET_VUE_VERSION' }, resolve);
-  });
-  
+async function detectAndInjectDevTools(vueInfo) {
   if (vueInfo.version === 2) {
     injectVue2DevTools();
   } else if (vueInfo.version === 3) {
-    const { selector } = window.currentDomainConfig || {};
-    injectVue3DevTools(selector);
+    injectVue3DevTools(vueInfo);
   } else {
     showNotification('error', 'No Vue instance detected, please check your config');
   }
@@ -18,8 +12,7 @@ async function detectAndInjectDevTools() {
 // Listen for messages from popup and background
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === 'ENABLE_VUE_DEVTOOLS') {
-    window.currentDomainConfig = message.config
-    detectAndInjectDevTools()
+    detectAndInjectDevTools(message.vueInfo)
   }
   
   if (message.type === 'VUE_DETECTED') {
@@ -45,12 +38,12 @@ function injectVue2DevTools() {
 }
 
 // Inject Vue3 DevTools
-function injectVue3DevTools(selector) {
+function injectVue3DevTools(vueInfo) {
   try {
     // Use chrome.scripting API to inject into page environment
     chrome.runtime.sendMessage({ 
         type: 'INJECT_VUE3',
-        selector: selector
+        vueInfo
     });
   } catch (error) {
     console.error('Injection failed:', error);

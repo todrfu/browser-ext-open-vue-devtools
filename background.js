@@ -3,50 +3,97 @@ const tabVueVersions = new Map();
 
 // Function to detect Vue version
 function detectVueVersion() {
-  return (function() {
-    // Detect Vue2
-    const hasVue2 = Array.from(document.querySelectorAll('*')).some(el => el.__vue__);
-    if (hasVue2) return { version: 2 };
-    
-    // Detect Vue3
-    const hasVue3 = Array.from(document.querySelectorAll('*')).some(el => el.__vue_app__);
-    if (hasVue3) return { version: 3 };
-    
+  function getSelector(element) {
+    if (!(element instanceof Element)) {
+      return null;
+    }
+
+    let selector = element.tagName.toLowerCase();
+
+    if (element.id) {
+      selector += `#${element.id}`;
+      return selector;
+    }
+
+    if (element.className) {
+      selector += `.${Array.from(element.classList).join(".")}`;
+    }
+
+    let parent = element.parentElement;
+    while (parent) {
+      const parentSelector = parent.tagName.toLowerCase();
+      if (parent.id) {
+        selector = `${parentSelector}#${parent.id} > ${selector}`;
+        return selector;
+      } else {
+        selector = `${parentSelector} > ${selector}`;
+      }
+      parent = parent.parentElement;
+    }
+
+    return selector;
+  }
+
+  return (function () {
+    // detect vue2
+    let isVue2 = false;
+    let isVue3 = false;
+    const walker = document.createTreeWalker(document.body, 1);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.__vue__) {
+        isVue2 = true;
+        break;
+      }
+      if (node.__vue_app__) {
+        isVue3 = true;
+        break;
+      }
+    }
+
+    if (isVue2) {
+      return { version: 2, root: getSelector(node) };
+    }
+
+    if (isVue3) {
+      return { version: 3, root: getSelector(node) };
+    }
+
     return { version: 0 };
   })();
 }
 
 // Set icon state
 function setIconState(tabId, isEnabled) {
-    chrome.action.setIcon({
-      tabId: tabId,
-      path: {
-        "16": `/icons/${isEnabled ? 'enabled' : 'disabled'}_16.png`,
-        "32": `/icons/${isEnabled ? 'enabled' : 'disabled'}_32.png`,
-        "48": `/icons/${isEnabled ? 'enabled' : 'disabled'}_48.png`,
-        "128": `/icons/${isEnabled ? 'enabled' : 'disabled'}_128.png`
-      }
-    });
+  chrome.action.setIcon({
+    tabId: tabId,
+    path: {
+      16: `/icons/${isEnabled ? "enabled" : "disabled"}_16.png`,
+      32: `/icons/${isEnabled ? "enabled" : "disabled"}_32.png`,
+      48: `/icons/${isEnabled ? "enabled" : "disabled"}_48.png`,
+      128: `/icons/${isEnabled ? "enabled" : "disabled"}_128.png`,
+    },
+  });
 }
-  
+
 // Detect Vue version in tab and update icon
 async function detectAndUpdateTab(tabId) {
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId },
       func: detectVueVersion,
-      world: "MAIN"
+      world: "MAIN",
     });
-    
+
     const vueInfo = results?.[0]?.result || { version: 0 };
     tabVueVersions.set(tabId, vueInfo);
-    
+
     // Update icon state
     setIconState(tabId, vueInfo.version > 0);
-    
+
     return vueInfo;
   } catch (error) {
-    console.error('Vue detection failed:', error);
+    console.error("Vue detection failed:", error);
     tabVueVersions.set(tabId, { version: 0 });
     setIconState(tabId, false);
     return { version: 0 };
@@ -55,15 +102,15 @@ async function detectAndUpdateTab(tabId) {
 
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url?.startsWith('http')) {
+  if (changeInfo.status === "complete" && tab.url?.startsWith("http")) {
     detectAndUpdateTab(tabId);
   }
 });
 
 // Listen for tab activation
 chrome.tabs.onActivated.addListener(({ tabId }) => {
-  chrome.tabs.get(tabId, tab => {
-    if (tab.url?.startsWith('http')) {
+  chrome.tabs.get(tabId, (tab) => {
+    if (tab.url?.startsWith("http")) {
       detectAndUpdateTab(tabId);
     }
   });
@@ -77,8 +124,8 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // Listen for messages from content script and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id;
-  
-  if (message.type === 'GET_VUE_VERSION') {
+
+  if (message.type === "GET_VUE_VERSION") {
     if (tabId) {
       // Return cached version info if available
       if (tabVueVersions.has(tabId)) {
@@ -137,7 +184,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .executeScript({
         target: { tabId: tabId },
         func: injectVue3,
-        args: [message.selector],
+        args: [message.vueInfo],
         world: "MAIN", // Execute in page's main world
       })
       .then((results) => {
@@ -162,14 +209,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Vue2 injection function
 function injectVue2() {
-  return (function() {
+  return (function () {
     var Vue, walker, node;
     walker = document.createTreeWalker(document.body, 1);
     while ((node = walker.nextNode())) {
       if (node.__vue__) {
         Vue = node.__vue__.$options._base;
         if (!Vue || !Vue.config) {
-            return false;
+          return false;
         }
         /**
          * Forcefully reset Vue.config.devtools to true
@@ -189,9 +236,9 @@ function injectVue2() {
 }
 
 // Vue3 injection function
-function injectVue3(selector) {
-  return (function() {
-    const el = document.querySelector(selector);
+function injectVue3(vueInfo) {
+  return (function () {
+    const el = document.querySelector(vueInfo.root);
     if (el && el.__vue_app__) {
       const vm = el.__vue_app__;
 
@@ -209,7 +256,7 @@ function injectVue3(selector) {
         // Register app
         if (Array.isArray(hook.apps)) {
           // Check if already registered
-          const isRegistered = hook.apps.some(app => app === vm);
+          const isRegistered = hook.apps.some((app) => app === vm);
           if (!isRegistered) {
             hook.apps.push({
               app: vm,
@@ -219,7 +266,7 @@ function injectVue3(selector) {
                 Fragment: Symbol("Fragment"),
                 Static: Symbol("Static"),
                 Text: Symbol("Text"),
-              }
+              },
             });
           }
         }
@@ -234,7 +281,7 @@ function injectVue3(selector) {
           Fragment: Symbol("Fragment"),
           Text: Symbol("Text"),
           Comment: Symbol("Comment"),
-          Static: Symbol("Static")
+          Static: Symbol("Static"),
         });
 
         console.log("Vue3 DevTools enabled");

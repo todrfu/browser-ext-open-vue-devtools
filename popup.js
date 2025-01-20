@@ -5,10 +5,13 @@ const app = Vue.createApp({
       currentDomain: "",
       loading: false,
       message: null,
-      vueVersion: 0,
+      vueInfo: {},
     };
   },
   computed: {
+    vueVersion() {
+      return this.vueInfo.version;
+    },
     isVue3() {
       return this.vueVersion === 3;
     },
@@ -53,31 +56,7 @@ const app = Vue.createApp({
         );
       });
 
-      this.vueVersion = vueInfo.version;
-
-      // Only load config for Vue3 projects
-      if (this.isVue3) {
-        const result = await chrome.storage.local.get("vueConfigs");
-        const initConfig = [
-          {
-            url: this.currentDomain,
-            selector: "#app",
-          },
-        ];
-        if (!result) {
-          this.configs = initConfig;
-          return;
-        }
-        try {
-          const resultCopy = JSON.parse(
-            JSON.stringify(result.vueConfigs || "[]")
-          );
-          this.configs = Array.isArray(resultCopy) ? resultCopy : initConfig;
-        } catch (error) {
-          console.error("Failed to parse configs:", error);
-          this.configs = initConfig;
-        }
-      }
+      this.vueInfo = vueInfo || {};
     } catch (error) {
       console.error("Initialization failed:", error);
       this.configs = [];
@@ -105,38 +84,14 @@ const app = Vue.createApp({
         this.loading = true;
         this.message = null;
 
-        if (this.isVue3) {
-          const configsToSave = Array.isArray(this.configs)
-            ? this.configs
-            : [
-                {
-                  url: this.currentDomain,
-                  selector: "#app",
-                },
-              ];
-
-          // Send message to content script
-          const [tab] = await chrome.tabs.query({
+        const [tab] = await chrome.tabs.query({
             active: true,
             currentWindow: true,
           });
-          await chrome.tabs.sendMessage(tab.id, {
-            type: "ENABLE_VUE_DEVTOOLS",
-            // Find config matching current domain
-            config: configsToSave.find((config) =>
-              this.currentDomain.startsWith(config.url)
-            ),
-          });
-        } else {
-          // Enable directly for Vue2 projects
-          const [tab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true,
-          });
-          await chrome.tabs.sendMessage(tab.id, {
-            type: "ENABLE_VUE_DEVTOOLS",
-          });
-        }
+        await chrome.tabs.sendMessage(tab.id, {
+          type: "ENABLE_VUE_DEVTOOLS",
+          vueInfo: this.vueInfo,
+        });
 
         // Close popup after successful execution
         window.close();
@@ -158,74 +113,6 @@ const app = Vue.createApp({
       { class: "text-lg font-bold mb-2" },
       `Vue Version: Vue ${this.isVue3 ? 3 : 2}`
     );
-
-    // Only show config table for Vue3 projects
-    const configTable = h("div", { class: "mb-4" }, [
-      h("div", { class: "flex justify-end items-center mb-2" }, [
-        h(
-          "button",
-          {
-            class: "px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600",
-            onClick: this.addNewRow,
-          },
-          "Add Config"
-        ),
-      ]),
-      h("table", { class: "w-full border-collapse border" }, [
-        h("thead", {}, [
-          h("tr", {}, [
-            h("th", { class: "border p-2" }, "Website URL"),
-            h("th", { class: "border p-2" }, "Vue Container Selector"),
-            h("th", { class: "border p-2" }, "Action"),
-          ]),
-        ]),
-        h(
-          "tbody",
-          {},
-          Array.isArray(this.configs)
-            ? this.configs.map((config, index) => {
-                return h("tr", { class: "border" }, [
-                  h("td", { class: "border p-2" }, [
-                    h("input", {
-                      class: "w-full p-1 border rounded",
-                      value: config.url,
-                      placeholder: this.currentDomain,
-                      onInput: (e) => {
-                        config.url = e.target.value;
-                      },
-                    }),
-                  ]),
-                  h("td", { class: "border p-2" }, [
-                    h("input", {
-                      class: "w-full p-1 border rounded",
-                      value: config.selector,
-                      placeholder: "#app",
-                      onInput: (e) => {
-                        config.selector = e.target.value;
-                      },
-                    }),
-                  ]),
-                  h("td", { class: "border p-2" }, [
-                    h(
-                      "button",
-                      {
-                        class: [
-                          this.configs.length > 1
-                            ? ""
-                            : "opacity-50 cursor-not-allowed",
-                          "px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600",
-                        ],
-                        onClick: () => this.removeRow(index),
-                      },
-                      "Delete"
-                    ),
-                  ]),
-                ]);
-              })
-            : []
-        ),
-      ]),
-    ]);
 
     // Enable button
     const enableButton = h(
@@ -272,13 +159,12 @@ const app = Vue.createApp({
       this.isVueProject
         ? h("div", { class: "mb-4" }, [
             vueVersion,
-            this.isVue3 ? configTable : null,
             enableButton,
           ])
         : h(
             "div",
             { class: "text-center text-lg font-bold" },
-            "This is not a Vue project"
+            "This is not a vue project"
           ),
     ]);
   },

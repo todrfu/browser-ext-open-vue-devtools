@@ -14,9 +14,8 @@ Note: You must have the Vue DevTools extension installed first and enabled.
 ## Usage
 
 1. Open the popup by clicking the extension icon in the Chrome toolbar.
-2. Add your configuration（if website is Vue3, you need to add the root selector, default is `#app`）.
-3. Click the "Enable" button.
-4. The Vue DevTools will be enabled for the current tab.
+2. Click the "Enable" button.
+3. The Vue DevTools will be enabled for the current tab.
 
 If the steps above don't work, please try:
 
