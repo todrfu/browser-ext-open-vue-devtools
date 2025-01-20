@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "open-vue-devtools",
+  "version": "0.0.1",
+  "description": "For vue projects that have been deployed online, if you need to use Vue DevTools, you canuse this extension. Note: You must have the Vue DevTools extension installed first and enabled.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "icons/enabled_16.png",
+    "32": "icons/enabled_32.png",
+    "48": "icons/enabled_48.png",
+    "128": "icons/enabled_128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/disabled_16.png",
+      "32": "icons/disabled_32.png",
+      "48": "icons/disabled_48.png",
+      "128": "icons/disabled_128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+} 
