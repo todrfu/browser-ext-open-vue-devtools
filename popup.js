@@ -13,10 +13,10 @@ const app = Vue.createApp({
       return this.vueInfo.version;
     },
     isVue3() {
-      return this.vueVersion === 3;
+      return this.vueVersion >= '3.0';
     },
     isVueProject() {
-      return this.vueVersion > 0;
+      return this.vueVersion > '0';
     },
   },
   watch: {
@@ -88,9 +88,10 @@ const app = Vue.createApp({
             active: true,
             currentWindow: true,
           });
-        await chrome.tabs.sendMessage(tab.id, {
+          await chrome.tabs.sendMessage(tab.id, {
           type: "ENABLE_VUE_DEVTOOLS",
           vueInfo: this.vueInfo,
+          tabId: tab.id,
         });
 
         // Close popup after successful execution
@@ -109,9 +110,9 @@ const app = Vue.createApp({
     const h = Vue.h;
 
     const vueVersion = h(
-      "h2",
-      { class: "text-lg font-bold mb-2" },
-      `Vue Version: Vue ${this.isVue3 ? 3 : 2}`
+      "h1",
+      { class: "text-sm font-bold mb-2" },
+      `Vue Version: ${this.vueVersion || ''}`
     );
 
     // Enable button
@@ -157,14 +158,14 @@ const app = Vue.createApp({
 
     return h("div", { class: "container mx-auto" }, [
       this.isVueProject
-        ? h("div", { class: "mb-4" }, [
+        ? h("div", {}, [
             vueVersion,
             enableButton,
           ])
         : h(
             "div",
-            { class: "text-center text-lg font-bold" },
-            "This is not a vue project"
+            { class: "text-center text-sm font-bold" },
+            "not vue project"
           ),
     ]);
   },

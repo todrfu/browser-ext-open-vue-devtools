@@ -52,14 +52,21 @@ function detectVueVersion() {
     }
 
     if (isVue2) {
-      return { version: 2, root: getSelector(node) };
+      let version = window.Vue?.version;
+      if (!version) {
+        version = node.__vue__?.constructor.version;
+      }
+      return {
+        version: version || "2.x",
+        root: getSelector(node),
+      };
     }
 
     if (isVue3) {
-      return { version: 3, root: getSelector(node) };
+      return { version: node.__vue_app__.version, root: getSelector(node) };
     }
 
-    return { version: 0 };
+    return { version: "0" };
   })();
 }
 
@@ -85,127 +92,20 @@ async function detectAndUpdateTab(tabId) {
       world: "MAIN",
     });
 
-    const vueInfo = results?.[0]?.result || { version: 0 };
+    const vueInfo = results?.[0]?.result || { version: "0" };
     tabVueVersions.set(tabId, vueInfo);
 
     // Update icon state
-    setIconState(tabId, vueInfo.version > 0);
+    setIconState(tabId, vueInfo.version > "0");
 
     return vueInfo;
   } catch (error) {
     console.error("Vue detection failed:", error);
-    tabVueVersions.set(tabId, { version: 0 });
+    tabVueVersions.set(tabId, { version: "0" });
     setIconState(tabId, false);
-    return { version: 0 };
+    return { version: "0" };
   }
 }
-
-// Listen for tab updates
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url?.startsWith("http")) {
-    detectAndUpdateTab(tabId);
-  }
-});
-
-// Listen for tab activation
-chrome.tabs.onActivated.addListener(({ tabId }) => {
-  chrome.tabs.get(tabId, (tab) => {
-    if (tab.url?.startsWith("http")) {
-      detectAndUpdateTab(tabId);
-    }
-  });
-});
-
-// Listen for tab removal
-chrome.tabs.onRemoved.addListener((tabId) => {
-  tabVueVersions.delete(tabId);
-});
-
-// Listen for messages from content script and popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const tabId = sender.tab?.id;
-
-  if (message.type === "GET_VUE_VERSION") {
-    if (tabId) {
-      // Return cached version info if available
-      if (tabVueVersions.has(tabId)) {
-        sendResponse(tabVueVersions.get(tabId));
-        return true;
-      }
-      // Otherwise detect again
-      detectAndUpdateTab(tabId).then(sendResponse);
-      return true;
-    }
-    // Handle request from popup
-    const activeTabId = message.tabId;
-    if (activeTabId) {
-      if (tabVueVersions.has(activeTabId)) {
-        sendResponse(tabVueVersions.get(activeTabId));
-        return true;
-      }
-      detectAndUpdateTab(activeTabId).then(sendResponse);
-      return true;
-    }
-  }
-
-  console.log("Received message:", message, "from:", sender);
-
-  if (!tabId) {
-    console.error("Unable to get tabId");
-    return;
-  }
-
-  if (message.type === "INJECT_VUE2") {
-    chrome.scripting
-      .executeScript({
-        target: { tabId: tabId },
-        func: injectVue2,
-        world: "MAIN", // Execute in page's main world
-      })
-      .then((results) => {
-        const success = results?.[0]?.result;
-        chrome.tabs.sendMessage(tabId, {
-          type: "VUE_DETECTED",
-          success: !!success,
-        });
-      })
-      .catch((error) => {
-        console.error("Script injection failed:", error);
-        chrome.tabs.sendMessage(tabId, {
-          type: "VUE_DETECTED",
-          success: false,
-          error: error.message,
-        });
-      });
-  }
-
-  if (message.type === "INJECT_VUE3") {
-    chrome.scripting
-      .executeScript({
-        target: { tabId: tabId },
-        func: injectVue3,
-        args: [message.vueInfo],
-        world: "MAIN", // Execute in page's main world
-      })
-      .then((results) => {
-        const success = results?.[0]?.result;
-        chrome.tabs.sendMessage(tabId, {
-          type: "VUE_DETECTED",
-          success: !!success,
-        });
-      })
-      .catch((error) => {
-        console.error("Script injection failed:", error);
-        chrome.tabs.sendMessage(tabId, {
-          type: "VUE_DETECTED",
-          success: false,
-          error: error.message,
-        });
-      });
-  }
-
-  return true;
-});
 
 // Vue2 injection function
 function injectVue2() {
@@ -294,3 +194,88 @@ function injectVue3(vueInfo) {
     return false;
   })();
 }
+
+// Execute inject script
+function executeInjectScript(injectFunc, tabId, vueInfo) {
+  chrome.scripting
+    .executeScript({
+      target: { tabId: tabId },
+      func: injectFunc,
+      args: vueInfo ? [vueInfo] : [],
+      world: "MAIN", // Execute in page's main world
+    })
+    .then((results) => {
+      const success = results?.[0]?.result;
+      chrome.tabs.sendMessage(tabId, {
+        type: "VUE_INJECTED",
+        success: !!success,
+      });
+    })
+    .catch((error) => {
+      console.error("Script injection failed:", error);
+      chrome.tabs.sendMessage(tabId, {
+        type: "VUE_INJECTED",
+        success: false,
+        error: error.message,
+      });
+    });
+}
+
+// Get tab Vue info
+function getTabVueInfo(message, sendResponse) {
+  // Handle request from popup
+  const activeTabId = message.tabId;
+  if (activeTabId) {
+    if (tabVueVersions.has(activeTabId)) {
+      sendResponse(tabVueVersions.get(activeTabId));
+      return true;
+    }
+    detectAndUpdateTab(activeTabId).then(sendResponse);
+    return true;
+  }
+}
+
+// Listen for tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.url?.startsWith("http")) {
+    detectAndUpdateTab(tabId);
+  }
+});
+
+// Listen for tab activation
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs.get(tabId, (tab) => {
+    if (tab.url?.startsWith("http")) {
+      detectAndUpdateTab(tabId);
+    }
+  });
+});
+
+// Listen for tab removal
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tabVueVersions.delete(tabId);
+});
+
+// Listen for messages from content script and popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const { tabId = sender.tab?.id, type, vueInfo } = message;
+
+  if (!tabId) {
+    console.error("Unable to get tabId");
+    return;
+  }
+
+  if (type === "GET_VUE_VERSION") {
+    getTabVueInfo(message, sendResponse);
+    return;
+  }
+
+  if (type === "INJECT_VUE2") {
+    executeInjectScript(injectVue2, tabId, vueInfo);
+    return;
+  }
+
+  if (type === "INJECT_VUE3") {
+    executeInjectScript(injectVue3, tabId, vueInfo);
+  }
+});

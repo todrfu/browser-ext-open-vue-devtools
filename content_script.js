@@ -1,28 +1,13 @@
 // Detect Vue version and inject appropriate DevTools
-async function detectAndInjectDevTools(vueInfo) {
-  if (vueInfo.version === 2) {
-    injectVue2DevTools();
-  } else if (vueInfo.version === 3) {
+function injectDevTools(vueInfo) {
+  if (vueInfo.version >= '3.0') {
     injectVue3DevTools(vueInfo);
+  } else if (vueInfo.version >= '2.0') {
+    injectVue2DevTools();
   } else {
-    showNotification('error', 'No Vue instance detected, please check your config');
+    showNotification('error', 'No vue version detected');
   }
 }
-
-// Listen for messages from popup and background
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (message.type === 'ENABLE_VUE_DEVTOOLS') {
-    detectAndInjectDevTools(message.vueInfo)
-  }
-  
-  if (message.type === 'VUE_DETECTED') {
-    if (message.success) {
-      showDevToolsNotification();
-    } else {
-      showNotification('error', 'No Vue instance detected, please check your config');
-    }
-  }
-});
 
 // Inject Vue2 DevTools
 function injectVue2DevTools() {
@@ -53,13 +38,7 @@ function injectVue3DevTools(vueInfo) {
 
 // Show DevTools notification
 function showDevToolsNotification() {
-  const devToolsOpen = window.__VUE_DEVTOOLS_GLOBAL_HOOK__ && 
-                      window.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue
-
-  showNotification('success', devToolsOpen ? 
-    'Please reopen Chrome DevTools to enable Vue DevTools' : 
-    'Please open Chrome DevTools to use Vue DevTools'
-  )
+  showNotification('success', 'Please open Chrome DevTools to use Vue DevTools')
 }
 
 // Show notification
@@ -101,3 +80,19 @@ function showNotification(type, message) {
     setTimeout(() => notification.remove(), 300)
   }, 5000)
 }
+
+// Listen for messages from popup and background
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.type === 'ENABLE_VUE_DEVTOOLS') {
+    injectDevTools(message.vueInfo)
+    return
+  }
+  
+  if (message.type === 'VUE_INJECTED') {
+    if (message.success) {
+      showDevToolsNotification();
+    } else {
+      showNotification('error', 'Injection failed');
+    }
+  }
+});
