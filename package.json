@@ -1,0 +1,11 @@
+{
+  "name": "open-vue-devtools",
+  "version": "0.0.1",
+  "description": "Open Vue DevTools",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "crx": "^5.0.1"
+  }
+}

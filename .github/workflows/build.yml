@@ -1,0 +1,33 @@
+name: Build ChromeExtension
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build CRX
+        env:
+          EXTENSION_PRIVATE_KEY: ${{ secrets.EXTENSION_PRIVATE_KEY }}
+        run: npm run build
+
+      - name: Upload CRX
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-vue-devtools
+          path: open-vue-devtools.crx

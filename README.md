@@ -6,10 +6,19 @@ Note: You must have the Vue DevTools extension installed first and enabled.
 
 ## install
 
+### source code
+
 1. Download the code
 2. Open Chrome DevTools and click the extension icon in the toolbar
 3. Click the "Load unpacked" button
-4. Select the folder where the code is located
+4. Select the folder(`src`) where the code is located
+
+### crx file
+
+1. Download the crx file
+2. Open Chrome DevTools and click the extension icon in the toolbar
+3. Click the "Load unpacked" button
+4. Select the crx file
 
 ## Usage
 
