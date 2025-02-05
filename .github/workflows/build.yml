@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,5 +32,18 @@ jobs:
       - name: Upload CRX
         uses: actions/upload-artifact@v4
         with:
-          name: open-vue-devtools
+          name: open-vue-devtools.crx
           path: open-vue-devtools.crx
+
+      - name: Update README
+        run: |
+          sed -i "s|CRX_PLACEHOLDER_URL|https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|g" README.md
+          
+      - name: Commit README
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "docs: update crx download link [skip ci]" || exit 0
+          git push
+      
