@@ -1,7 +1,10 @@
 // Store Vue version info for tabs
 const tabVueVersions = new Map();
 
-// Function to detect Vue version
+/**
+ * Detect Vue version
+ * @returns {Object} - Vue info
+ */
 function detectVueVersion() {
   function getSelector(element) {
     if (!(element instanceof Element)) {
@@ -70,7 +73,11 @@ function detectVueVersion() {
   })();
 }
 
-// Set icon state
+/**
+ * Set icon state
+ * @param {number} tabId
+ * @param {boolean} isEnabled - Whether the icon is enabled
+ */
 function setIconState(tabId, isEnabled) {
   chrome.action.setIcon({
     tabId: tabId,
@@ -83,7 +90,10 @@ function setIconState(tabId, isEnabled) {
   });
 }
 
-// Detect Vue version in tab and update icon
+/**
+ * Detect Vue version in tab and update icon
+ * @param {number} tabId
+ */
 async function detectAndUpdateTab(tabId) {
   try {
     const results = await chrome.scripting.executeScript({
@@ -107,7 +117,10 @@ async function detectAndUpdateTab(tabId) {
   }
 }
 
-// Vue2 injection function
+/**
+ * Vue2 injection function
+ * @returns {boolean} - Whether the injection is successful
+ */
 function injectVue2() {
   return (function () {
     var Vue, walker, node;
@@ -135,14 +148,17 @@ function injectVue2() {
   })();
 }
 
-// Vue3 injection function
+/**
+ * Vue3 injection function
+ * @param {Object} vueInfo
+ * @returns {boolean} - Whether the injection is successful
+ */
 function injectVue3(vueInfo) {
   return (function () {
     const el = document.querySelector(vueInfo.root);
     if (el && el.__vue_app__) {
       const vm = el.__vue_app__;
 
-      // Ensure hook exists
       if (!window.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
         console.error("Vue DevTools hook not found");
         return false;
@@ -184,7 +200,6 @@ function injectVue3(vueInfo) {
           Static: Symbol("Static"),
         });
 
-        console.log("Vue3 DevTools enabled");
         return true;
       } catch (error) {
         console.error("Vue3 DevTools initialization failed:", error);
@@ -195,7 +210,12 @@ function injectVue3(vueInfo) {
   })();
 }
 
-// Execute inject script
+/**
+ * Execute inject script
+ * @param {Function} injectFunc - Inject function
+ * @param {number} tabId
+ * @param {Object} vueInfo
+ */
 function executeInjectScript(injectFunc, tabId, vueInfo) {
   chrome.scripting
     .executeScript({
@@ -221,7 +241,11 @@ function executeInjectScript(injectFunc, tabId, vueInfo) {
     });
 }
 
-// Get tab Vue info
+/**
+ * Get tab Vue info
+ * @param {Object} message
+ * @param {Function} sendResponse
+ */
 function getTabVueInfo(message, sendResponse) {
   // Handle request from popup
   const activeTabId = message.tabId;
@@ -235,14 +259,22 @@ function getTabVueInfo(message, sendResponse) {
   }
 }
 
-// Listen for tab updates
+/**
+ * Listen for tab updates
+ * @param {number} tabId
+ * @param {Object} changeInfo - Change info
+ * @param {Object} tab
+ */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url?.startsWith("http")) {
     detectAndUpdateTab(tabId);
   }
 });
 
-// Listen for tab activation
+/**
+ * Listen for tab activation
+ * @param {Object} tab
+ */
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   chrome.tabs.get(tabId, (tab) => {
     if (tab.url?.startsWith("http")) {
@@ -251,12 +283,20 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
   });
 });
 
-// Listen for tab removal
+/**
+ * Listen for tab removal
+ * @param {number} tabId
+ */
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabVueVersions.delete(tabId);
 });
 
-// Listen for messages from content script and popup
+/**
+ * Listen for messages from content script and popup
+ * @param {Object} message
+ * @param {Object} sender
+ * @param {Function} sendResponse
+ */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { tabId = sender.tab?.id, type, vueInfo } = message;
 

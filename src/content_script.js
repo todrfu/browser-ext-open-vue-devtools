@@ -1,4 +1,7 @@
-// Detect Vue version and inject appropriate DevTools
+/**
+ * Detect Vue version and inject DevTools
+ * @param {Object} vueInfo
+ */
 function injectDevTools(vueInfo) {
   if (vueInfo.version >= '3.0') {
     injectVue3DevTools(vueInfo);
@@ -9,10 +12,11 @@ function injectDevTools(vueInfo) {
   }
 }
 
-// Inject Vue2 DevTools
+/**
+ * Inject Vue2 DevTools
+ */
 function injectVue2DevTools() {
   try {
-    // Use chrome.scripting API to inject into page environment
     chrome.runtime.sendMessage({ 
       type: 'INJECT_VUE2'
     });
@@ -22,10 +26,12 @@ function injectVue2DevTools() {
   }
 }
 
-// Inject Vue3 DevTools
+/**
+ * Inject Vue3 DevTools
+ * @param {Object} vueInfo
+ */
 function injectVue3DevTools(vueInfo) {
   try {
-    // Use chrome.scripting API to inject into page environment
     chrome.runtime.sendMessage({ 
         type: 'INJECT_VUE3',
         vueInfo
@@ -36,20 +42,24 @@ function injectVue3DevTools(vueInfo) {
   }
 }
 
-// Show DevTools notification
+/**
+ * Show DevTools notification
+ */
 function showDevToolsNotification() {
   showNotification('success', 'Please open Chrome DevTools to use Vue DevTools')
 }
 
-// Show notification
+/**
+ * Show notification
+ * @param {string} type - Notification type
+ * @param {string} message - Notification message
+ */
 function showNotification(type, message) {
-  // Remove existing notification
   const existingNotification = document.getElementById('vue-devtools-notification')
   if (existingNotification) {
     existingNotification.remove()
   }
 
-  // Create fixed position notification container
   const notification = document.createElement('div')
   notification.id = 'vue-devtools-notification'
   notification.style.cssText = `
@@ -71,17 +81,20 @@ function showNotification(type, message) {
   `
   notification.textContent = message
 
-  // Add to page top
   document.body.appendChild(notification)
   
-  // Fade out after 5 seconds
   setTimeout(() => {
     notification.style.opacity = '0'
     setTimeout(() => notification.remove(), 300)
   }, 5000)
 }
 
-// Listen for messages from popup and background
+/**
+ * Listen for messages from popup and background
+ * @param {Object} message
+ * @param {Object} sender
+ * @param {Function} sendResponse
+ */
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === 'ENABLE_VUE_DEVTOOLS') {
     injectDevTools(message.vueInfo)
