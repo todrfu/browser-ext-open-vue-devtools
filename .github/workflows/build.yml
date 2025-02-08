@@ -40,6 +40,7 @@ jobs:
       - name: Update README
         run: |
           sed -i "s|CRX_PLACEHOLDER_URL|https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|g" README.md
+          sed -i "s|CRX_PLACEHOLDER_URL|https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|g" README_zh.md
           
       - name: Commit README
         run: |
