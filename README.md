@@ -1,37 +1,37 @@
 # open-vue-devtools
 
-[English](README.md) | [中文](README_zh.md)
+[中文](README.md) | [English](README_en.md)
 
-For vue projects that have been deployed online, if you need to use Vue DevTools, you can use this extension.
+适用于已部署到线上的 Vue 项目，如果你需要启用 `vue-devtools` 用于调试，可以使用此扩展。
 
-Note: You must have the Vue DevTools extension installed first and enabled.
+注意：你必须先安装并启用 `vue-devtools` 扩展。
 
-## Install
+## 安装
 
-### Source Code
+### 源码方式
 
-1. Download the code
-2. Open Chrome DevTools and click the extension icon in the toolbar
-3. Click the "Load unpacked" button
-4. Select the folder(`src`) where the code is located
+1. 下载源码
+2. 打开 Chrome DevTools，点击工具栏中的扩展图标
+3. 点击"加载已解压的扩展程序"按钮
+4. 选择源码所在的文件夹（`src`）
 
-### CRX File
+### CRX 文件方式
 
-1. [Download the crx file](https://github.com/todrfu/open-vue-devtools/actions/runs/13216036030)
-2. Open Chrome DevTools and click the extension icon in the toolbar
-3. Click the "Load unpacked" button
-4. Select the crx file
+1. [下载 crx 文件](CRX_PLACEHOLDER_URL)
+2. 打开 Chrome DevTools，点击工具栏中的扩展图标
+3. 点击"加载已解压的扩展程序"按钮
+4. 选择下载的 crx 文件
 
-## Usage
+## 使用方法
 
-1. Open the popup by clicking the extension icon in the Chrome toolbar
-2. Click the "Enable" button
-3. The Vue DevTools will be enabled for the current tab
+1. 点击 Chrome 工具栏中的扩展图标打开弹窗
+2. 点击"启用"按钮
+3. Vue DevTools 将在当前标签页中启用
 
-If the steps above don't work, please try:
+如果上述步骤不起作用，请尝试：
 
-1. Close Chrome DevTools
-2. Reopen the open-vue-devtools extension and click the Enable button
-3. Reopen Chrome DevTools
+1. 关闭 Chrome DevTools
+2. 重新打开 open-vue-devtools 扩展并点击启用按钮
+3. 重新打开 Chrome DevTools
 
-![demo](./demo.gif)
+![demo](./demo.gif) 

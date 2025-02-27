@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "open-vue-devtools",
   "version": "0.0.1",
-  "description": "For vue projects that have been deployed online, if you need to use Vue DevTools, you canuse this extension.",
+  "description": "Enable Vue DevTools for any Vue project through the Chrome extension.",
   "permissions": [
     "activeTab",
     "scripting",

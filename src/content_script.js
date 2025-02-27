@@ -95,7 +95,7 @@ function showNotification(type, message) {
  * @param {Object} sender
  * @param {Function} sendResponse
  */
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === 'ENABLE_VUE_DEVTOOLS') {
     injectDevTools(message.vueInfo)
     return
