@@ -1,8 +1,6 @@
 const app = Vue.createApp({
   data() {
     return {
-      configs: [],
-      currentDomain: "",
       loading: false,
       message: null,
       vueInfo: {},
@@ -19,23 +17,6 @@ const app = Vue.createApp({
       return this.vueVersion > '0';
     },
   },
-  watch: {
-    // Watch configs array for changes
-    configs: {
-      handler: async function (newConfigs) {
-        if (this.isVue3 && Array.isArray(newConfigs)) {
-          try {
-            await chrome.storage.local.set({
-              vueConfigs: JSON.parse(JSON.stringify(newConfigs)),
-            });
-          } catch (error) {
-            console.error("Failed to save configs:", error);
-          }
-        }
-      },
-      deep: true, // Watch nested changes in configs array
-    },
-  },
   async created() {
     try {
       // Get current tab info
@@ -43,7 +24,6 @@ const app = Vue.createApp({
         active: true,
         currentWindow: true,
       });
-      this.currentDomain = new URL(tab.url).hostname;
 
       // Get Vue version info
       const vueInfo = await new Promise((resolve) => {
@@ -59,26 +39,9 @@ const app = Vue.createApp({
       this.vueInfo = vueInfo || {};
     } catch (error) {
       console.error("Initialization failed:", error);
-      this.configs = [];
     }
   },
   methods: {
-    addNewRow() {
-      if (!this.isVue3) return;
-      if (!Array.isArray(this.configs)) {
-        this.configs = [];
-      }
-      this.configs.push({ url: this.currentDomain, selector: "#app" });
-    },
-    removeRow(index) {
-      if (!this.isVue3) return;
-      if (Array.isArray(this.configs)) {
-        this.configs.splice(index, 1);
-        if (this.configs.length === 0) {
-          this.configs.push({ url: this.currentDomain, selector: "#app" });
-        }
-      }
-    },
     async enableDevTools() {
       try {
         this.loading = true;

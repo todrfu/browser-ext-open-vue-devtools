@@ -131,16 +131,15 @@ function injectVue2() {
         if (!Vue || !Vue.config) {
           return false;
         }
-        /**
-         * Forcefully reset Vue.config.devtools to true
-         * Avoid the problem that vue-devtools cannot be enabled when Vue.config.devtools=true
-         */
+        // Forcefully reset Vue.config.devtools to true
         Vue.config.devtools = true;
         if (window.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+          // Avoid the problem that vue-devtools cannot be enabled when Vue.config.devtools=true
           window.__VUE_DEVTOOLS_GLOBAL_HOOK__.emit("init", Vue);
+          console.log("Vue2 DevTools enabled");
           return true;
         }
-        console.log("Vue2 DevTools enabled");
+        console.error("Vue DevTools hook not found");
         return true;
       }
     }
@@ -158,15 +157,15 @@ function injectVue3(vueInfo) {
     const el = document.querySelector(vueInfo.root);
     if (el && el.__vue_app__) {
       const vm = el.__vue_app__;
+      const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
 
-      if (!window.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+      if (!hook) {
         console.error("Vue DevTools hook not found");
         return false;
       }
 
       try {
         // Set required properties
-        const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
         hook.enabled = true;
 
         // Register app

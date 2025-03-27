@@ -17,7 +17,7 @@
 
 ### CRX 文件方式
 
-1. [下载 crx 文件](https://github.com/todrfu/open-vue-devtools/actions/runs/13558409468)
+1. [下载 CRX 文件](https://github.com/todrfu/open-vue-devtools/actions/runs/13558409468)
 2. 打开 Chrome DevTools，点击工具栏中的扩展图标
 3. 点击"加载已解压的扩展程序"按钮
 4. 选择下载的 crx 文件

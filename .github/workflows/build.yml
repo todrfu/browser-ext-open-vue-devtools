@@ -39,13 +39,14 @@ jobs:
 
       - name: Update README
         run: |
-          sed -i "s|CRX_PLACEHOLDER_URL|https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|g" README*.md
-          
+          sed -i 's|\[下载 CRX 文件\](.*)|[下载 CRX 文件](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})|g' README.md
+          sed -i 's|\[Download CRX file\](.*)|[Download CRX file](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})|g' README_en.md
+
       - name: Commit README
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add README*
+          git add README*.md
           git commit -m "docs: update crx download link [skip ci]" || exit 0
           git push
       
