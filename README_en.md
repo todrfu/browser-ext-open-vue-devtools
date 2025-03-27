@@ -17,7 +17,7 @@ Note: You must have the Vue DevTools extension installed first and enabled.
 
 ### CRX File
 
-1. [Download CRX file](https://github.com/todrfu/open-vue-devtools/actions/runs/13558409468)
+1. [Download CRX file](https://github.com/todrfu/browser-ext-open-vue-devtools/actions/runs/14104123349)
 2. Open Chrome DevTools and click the extension icon in the toolbar
 3. Click the "Load unpacked" button
 4. Select the crx file
